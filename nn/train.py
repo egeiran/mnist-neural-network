@@ -1,8 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-from network import init_params, forward, backward, loss
-from data import load_data
+from nn.network import init_params, forward, backward, loss
+from nn.data import load_data
 
 if __name__ == "__main__":
     print()
@@ -68,13 +68,31 @@ if __name__ == "__main__":
         if pred[i] != y_test[i]:
             m_i.append(i)
 
+    # 2D 10 col and 10 row array of which guesses were wrong and what the correct answer was
+    wrong_guesses = np.zeros((10, 10), dtype=int)
+    for i in m_i:
+        wrong_guesses[y_test[i], pred[i]] += 1
+    print("Wrong guesses (rows = correct, cols = guessed):")
+    # map with 0 to 9 as row and col labels
+    print("   ", end="")
+    for i in range(10):
+        print(f"{i:>3}", end="")
+    print()
+    for i in range(10):
+        print(f"{i:>3}", end="")
+        for j in range(10):
+            print(f"{wrong_guesses[i, j]:>3}", end="")
+        print()
+
     confidence = A_out[m_i, pred[m_i]]      # hvor sikker den var på sitt (gale) svar
     worst = np.array(m_i)[np.argsort(-confidence)][:20]
 
-    for i in range(0, 20, 5):
-        for j in range(5):
-            plt.subplot(1, 5, j + 1)
-            plt.imshow(X_test[worst[i+j]].reshape(28, 28), cmap='gray')
-            plt.title(f'Fasit: {y_test[worst[i+j]]}, Gjett: {pred[worst[i+j]]}', rotation="vertical")
-            plt.axis('off')
-        plt.show()
+    show_worst = False
+    if show_worst:
+        for i in range(0, 20, 5):
+            for j in range(5):
+                plt.subplot(1, 5, j + 1)
+                plt.imshow(X_test[worst[i+j]].reshape(28, 28), cmap='gray')
+                plt.title(f'Fasit: {y_test[worst[i+j]]}, Gjett: {pred[worst[i+j]]}', rotation="vertical")
+                plt.axis('off')
+            plt.show()

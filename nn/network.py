@@ -1,6 +1,6 @@
 import numpy as np
 
-from data import load_data
+from nn.data import load_data
 
 def init_params(sizes):
     """
