@@ -40,7 +40,7 @@ class S08Backprop(NarratedScene):
         dW2 = np.abs(data["dW2_init"])
 
         net = NetView(pixels, hidden, out, x_out=-0.2)
-        for c, v in zip(net.hidden, net.hidden_values):
+        for c, v in zip(net.hidden.nodes, net.hidden_values):
             c.set_fill(ACCENT, opacity=float(np.clip(v, 0.05, 1)))
         for c, v in zip(net.out, net.out_values):
             c.set_fill(ACCENT, opacity=float(np.clip(v, 0.05, 1)))
@@ -123,7 +123,7 @@ class S08Backprop(NarratedScene):
             )
             self.play(
                 LaggedStart(
-                    *[c.animate.set_stroke(WARM, width=2.5) for c in net.hidden],
+                    *[c.animate.set_stroke(WARM, width=2.5) for c in net.hidden.nodes],
                     lag_ratio=0.05,
                 ),
                 FadeIn(eqs[1], shift=LEFT * 0.2),
@@ -143,7 +143,7 @@ class S08Backprop(NarratedScene):
                 run_time=1.8,
             )
             self.play(
-                net.inputs[1].animate.set_stroke(WARM, width=2.5),
+                net.in_frame.animate.set_stroke(WARM, width=2.5),
                 FadeIn(eqs[3], shift=LEFT * 0.2),
                 run_time=0.8,
             )

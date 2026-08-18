@@ -54,18 +54,27 @@ class S03OneNeuron(NarratedScene):
 
         arrows = VGroup()
         w_labels = VGroup()
-        for g, w in zip(inputs, WS):
+        # Pilene lander spredt utover venstre side av nevronet i stedet for i
+        # ett punkt, og vekttallet legges vinkelrett på pila si — ellers ligger
+        # den øverste og nederste rett oppå streken sin.
+        tip_angles = PI - np.linspace(0.75, -0.75, len(XS))
+        for g, w, ang in zip(inputs, WS, tip_angles):
+            tip = cell.get_center() + cell.radius * np.array([np.cos(ang), np.sin(ang), 0.0])
             arr = Arrow(
                 g[0].get_right(),
-                cell.get_left(),
+                tip,
                 buff=0.12,
                 stroke_width=2 + 2.2 * abs(w),
                 max_tip_length_to_length_ratio=0.05,
                 color=ACCENT if w > 0 else WARM,
             )
             arrows.add(arr)
+            d = arr.get_unit_vector()
+            perp = np.array([-d[1], d[0], 0.0])
+            if perp[1] < 0:
+                perp = -perp
             lab = mono(f"{w:+.1f}", size=21, color=ACCENT if w > 0 else WARM)
-            lab.move_to(arr.point_from_proportion(0.42) + UP * 0.28 + LEFT * 0.05)
+            lab.move_to(arr.point_from_proportion(0.42) + perp * 0.32)
             w_labels.add(lab)
 
         with self.narrate("Here's the piece everything is built from. One neuron.") as t:
@@ -110,37 +119,52 @@ class S03OneNeuron(NarratedScene):
             legend.to_corner(UR, buff=0.6)
             self.play(FadeIn(legend), run_time=0.6)
 
-            # Produktene dukker opp langs pilene
+            # Regnestykkene bygges av kopier: tallet i sirkelen og vekttallet på
+            # pila flyr ut til høyre side og setter seg i hver sin linje, godt
+            # unna pilene. Originalene blir stående.
             prods = VGroup()
-            for arr, x, w, p in zip(arrows, XS, WS, products):
-                txt = mono(f"{x:.2f}×{w:+.1f} = {p:+.2f}", size=19, color=GOLD)
-                txt.move_to(arr.point_from_proportion(0.78) + DOWN * 0.3)
-                prods.add(txt)
-            self.play(
-                LaggedStart(*[FadeIn(p, scale=0.7) for p in prods], lag_ratio=0.18),
-                run_time=1.8,
-            )
+            eq_anims = []
+            for i, (g, w_lab, x, w, prod) in enumerate(zip(inputs, w_labels, XS, WS, products)):
+                x_txt = mono(f"{x:.2f}", size=24, color=GOLD)
+                sign = mono("×", size=24, color=MUTED)
+                w_txt = mono(f"{w:+.1f}", size=24, color=ACCENT if w > 0 else WARM)
+                res = mono(f"= {prod:+.2f}", size=24, color=GOLD)
+                row = VGroup(x_txt, sign, w_txt, res).arrange(RIGHT, buff=0.24)
+                row.move_to(np.array([3.7, 1.15 - i * 0.85, 0]))
+                prods.add(row)
+                eq_anims.append(
+                    Succession(
+                        AnimationGroup(
+                            ReplacementTransform(g[1].copy(), x_txt),
+                            ReplacementTransform(w_lab.copy(), w_txt),
+                            FadeIn(sign),
+                            run_time=1.0,
+                        ),
+                        FadeIn(res, shift=LEFT * 0.2, run_time=0.45),
+                    )
+                )
+            self.play(LaggedStart(*eq_anims, lag_ratio=0.4), run_time=3.4)
 
-            # ... og glir sammen til en sum
-            row_y = cell.get_center()[1] - 2.75
-            row_x = -4.3
+            # ... og glir sammen til en sum nederst
+            row_y = cell.get_center()[1] - 2.85
+            row_x = -3.2
+            sums = VGroup(
+                *[
+                    mono(f"{v:+.2f}", size=28, color=GOLD).move_to(
+                        np.array([row_x + i * 1.35, row_y, 0])
+                    )
+                    for i, v in enumerate(products)
+                ]
+            )
             self.play(
                 LaggedStart(
-                    *[
-                        Transform(
-                            p,
-                            mono(f"{v:+.2f}", size=28, color=GOLD).move_to(
-                                np.array([row_x + i * 1.28, row_y, 0])
-                            ),
-                        )
-                        for i, (p, v) in enumerate(zip(prods, products))
-                    ],
+                    *[ReplacementTransform(r, t) for r, t in zip(prods, sums)],
                     lag_ratio=0.1,
                 ),
                 run_time=1.4,
             )
             total = mono(f"=  {s:.2f}", size=28, color=GOLD)
-            total.next_to(prods, RIGHT, buff=0.4)
+            total.next_to(sums, RIGHT, buff=0.4)
             self.play(FadeIn(total, shift=LEFT * 0.2), run_time=0.7)
 
             bias = mono(f"+ bias {B:+.1f}", size=26, color=VIOLET)
@@ -155,7 +179,7 @@ class S03OneNeuron(NarratedScene):
             z_text = mono(f"z = {z:.2f}", size=44, color=GOLD)
             z_text.next_to(cell, UP, buff=0.75)
             self.play(
-                ReplacementTransform(VGroup(prods, total, bias), z_text),
+                ReplacementTransform(VGroup(sums, total, bias), z_text),
                 FadeOut(legend),
                 run_time=1.3,
             )

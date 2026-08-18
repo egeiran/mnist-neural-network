@@ -18,6 +18,7 @@ from scenes.common import (
     chips,
     digit_image,
     mono,
+    node_column,
     pixel_grid,
     place_chips,
     run,
@@ -57,7 +58,7 @@ class S02ImageToVector(NarratedScene):
             # Rutenettet legger seg over bildet
             self.play(FadeIn(grid), FadeOut(picture), run_time=1.4)
 
-            tags = backdrop(place_chips(chips("28 × 28 = 784")))
+            tags = backdrop(place_chips(chips("28 × 28 = 784 pixels")))
             self.play(FadeIn(tags), run_time=0.5)
 
             # Zoom inn på en flekk og vis de faktiske tallene
@@ -122,33 +123,43 @@ class S02ImageToVector(NarratedScene):
             )
             self.play(grid.animate.scale(0.78).move_to(LEFT * 3.7), run_time=0.8)
 
-            col_h, col_w = 6.0, 0.42
-            sliver = col_h / 784
-            column = VGroup()
             flat = vec.reshape(-1)
-            for i, v in enumerate(flat):
-                rect = Rectangle(
-                    width=col_w,
-                    height=sliver,
-                    fill_color=WHITE,
-                    fill_opacity=float(np.clip(v, 0, 1)),
-                    stroke_width=0,
-                )
-                rect.move_to(np.array([3.4, col_h / 2 - (i + 0.5) * sliver, 0]))
-                column.add(rect)
+            col = node_column(flat, radius=0.13, buff=0.17, labels=True, label_size=16)
+            col.move_to(np.array([1.9, 0, 0]))
+            col_x = col.nodes.get_center()[0]
 
-            frame = SurroundingRectangle(column, color=DIM, stroke_width=2, buff=0.06)
+            frame = SurroundingRectangle(col, color=DIM, stroke_width=2, buff=0.28)
             self.play(Create(frame), run_time=0.6)
 
+            # Hver rad i rutenettet flyr bort til den høyden tallene sine ville
+            # hatt i kolonnen, og krymper vekk der. Nodene dukker opp i samme
+            # rekkefølge, så lista ser ut til å fylles ovenfra og ned.
+            unroll = 4.0
             rows = [VGroup(*grid[r * 28 : (r + 1) * 28]) for r in range(28)]
-            targets = [VGroup(*column[r * 28 : (r + 1) * 28]) for r in range(28)]
+            fly = [
+                row.animate.stretch_to_fit_height(0.03)
+                .stretch_to_fit_width(0.5)
+                .move_to(np.array([col_x, col.y_of(r * 28 + 14), 0]))
+                .set_opacity(0)
+                for r, row in enumerate(rows)
+            ]
+
+            def when(i: float) -> float:
+                return float(np.clip(i / 783 * unroll - 0.25, 0.01, unroll - 0.4))
+
+            popping = [
+                Succession(Wait(when(i)), FadeIn(entry, scale=0.6, run_time=0.4))
+                for entry, i in zip(col.entries, col.indices)
+            ] + [
+                Succession(Wait(when(i)), FadeIn(d, run_time=0.4))
+                for d, i in zip(col.dots, col.dot_indices)
+            ]
+
             self.play(
-                LaggedStart(
-                    *[Transform(src, dst) for src, dst in zip(rows, targets)],
-                    lag_ratio=0.09,
-                ),
-                run_time=4.4,
+                LaggedStart(*fly, lag_ratio=0.085, run_time=unroll),
+                AnimationGroup(*popping),
             )
+            self.remove(*rows, grid)
 
             brace = Brace(frame, RIGHT, color=MUTED)
             label = mono("784", size=34, color=GOLD).next_to(brace, RIGHT, buff=0.2)

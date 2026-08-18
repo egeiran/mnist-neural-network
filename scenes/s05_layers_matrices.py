@@ -19,6 +19,7 @@ from scenes.common import (
     image_from_array,
     mono,
     neuron,
+    node_column,
     place_chips,
     run,
     signed_rgb,
@@ -41,33 +42,24 @@ class S05LayersMatrices(NarratedScene):
         W1 = data["W1_final"]
 
         # --- 784 inn i ett nevron --------------------------------------------
-        col_h, col_w = 4.6, 0.34
+        col_h = 4.6
         vec = data["showcase_images"][0].reshape(-1)
-        slivers = VGroup()
-        for i, v in enumerate(vec):
-            slivers.add(
-                Rectangle(
-                    width=col_w,
-                    height=col_h / 784,
-                    fill_color=WHITE,
-                    fill_opacity=float(np.clip(v, 0, 1)),
-                    stroke_width=0,
-                ).move_to(np.array([-5.6, col_h / 2 - (i + 0.5) * col_h / 784, 0]))
-            )
-        col_frame = SurroundingRectangle(slivers, color=DIM, stroke_width=2, buff=0.05)
+        nodes = node_column(vec, radius=0.1, buff=0.13, height=col_h)
+        nodes.move_to(np.array([-5.6, 0, 0]))
+        col_frame = SurroundingRectangle(nodes, color=DIM, stroke_width=2, buff=0.2)
         col_tag = mono("784", size=22, color=MUTED).next_to(col_frame, DOWN, buff=0.2)
-        column = VGroup(slivers, col_frame, col_tag)
+        column = VGroup(nodes, col_frame, col_tag)
 
         one = neuron(radius=0.3, value=0.72)
         one.move_to(RIGHT * 0.2)
 
-        def fan(target, n=26, width=1.0):
+        def fan(target, every=1, width=1.0):
+            """Ledninger fra nodene vi viser og bort til ett nevron."""
             g = VGroup()
-            ys = np.linspace(-col_h / 2, col_h / 2, n)
-            for y in ys:
+            for node in nodes.nodes[::every]:
                 g.add(
                     Line(
-                        np.array([-5.6 + col_w / 2, y, 0]),
+                        node.get_right() + RIGHT * 0.02,
                         target.get_left(),
                         stroke_width=width,
                         stroke_color=ACCENT,
@@ -86,14 +78,17 @@ class S05LayersMatrices(NarratedScene):
             self.play(Create(wires), run_time=1.0)
 
             # ... og så 128 av dem
-            cells = VGroup(*[neuron(radius=0.12, value=float(v)) for v in rng.random(16)])
-            cells.arrange(DOWN, buff=0.15).move_to(RIGHT * 0.2)
+            cells = node_column(
+                rng.random(128), n_top=5, n_mid=4, n_bottom=4,
+                radius=0.12, buff=0.15, color=ACCENT,
+            )
+            cells.move_to(RIGHT * 0.2)
             brace = Brace(cells, RIGHT, color=MUTED)
             brace_tag = mono("128 neurons", size=22, color=MUTED).next_to(brace, RIGHT, buff=0.18)
 
             all_wires = VGroup()
-            for c in cells:
-                all_wires.add(*fan(c, n=7, width=0.5))
+            for c in cells.nodes:
+                all_wires.add(*fan(c, every=2, width=0.5))
 
             self.play(
                 ReplacementTransform(one, cells),

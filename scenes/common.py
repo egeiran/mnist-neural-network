@@ -57,10 +57,17 @@ def formula(text: str, size: float = 36, color: str = FG, **kw) -> Text:
 
 
 def chip(text: str, color: str = MUTED, size: float = 24) -> VGroup:
-    """Liten etikett nede til venstre — manusets 'on-screen'-tekst."""
+    """Liten etikett nede til venstre — manusets 'on-screen'-tekst.
+
+    Streken til venstre måles ut fra tekststørrelsen, ikke fra tekstens
+    tilfeldige høyde, slik at alle chips får nøyaktig like lange streker
+    uansett om ordene har staver og haler i seg."""
     label = mono(text, size=size, color=color)
-    bar = Line(UP * 0.13, DOWN * 0.13, color=color, stroke_width=3)
-    bar.next_to(label, LEFT, buff=0.18)
+    bar = Line(UP * size * 0.0075, DOWN * size * 0.0075, color=color, stroke_width=2.5)
+    bar.set_cap_style(CapStyleType.ROUND)
+    bar.set_stroke(opacity=0.45)
+    bar.next_to(label, LEFT, buff=size * 0.013)
+    bar.align_to(label, UP)
     return VGroup(bar, label)
 
 
@@ -210,6 +217,105 @@ def neuron(radius: float = 0.22, value: float = 0.0, color: str = ACCENT) -> Cir
         fill_color=color,
         fill_opacity=float(np.clip(value, 0, 1)),
     )
+
+
+def _column_indices(values: np.ndarray, n_top: int, n_mid: int, n_bottom: int) -> list[list[int]]:
+    """Hvilke av de 784 tallene vi faktisk tegner: noen i toppen, en stripe midt
+    i sifferet (der det er blekk å se), og noen i bunnen. Indeksene er ekte —
+    midtstripa legges rundt den lyseste pikselen."""
+    n = len(values)
+    top = list(range(n_top))
+    bottom = list(range(n - n_bottom, n))
+    lo, hi = n_top + 1, n - n_bottom - n_mid - 1
+    start = int(np.clip(int(np.argmax(values)) - n_mid // 2, lo, hi))
+    return [top, list(range(start, start + n_mid)), bottom]
+
+
+def _vdots(radius: float, color: str = MUTED) -> VGroup:
+    dots = VGroup(*[Dot(radius=max(radius * 0.16, 0.018), color=color) for _ in range(3)])
+    return dots.arrange(DOWN, buff=radius * 0.55)
+
+
+def node_column(
+    values: np.ndarray,
+    n_top: int = 4,
+    n_mid: int = 4,
+    n_bottom: int = 3,
+    radius: float = 0.12,
+    buff: float = 0.16,
+    color: str = WHITE,
+    fill: bool = True,
+    labels: bool = False,
+    label_size: float = 15,
+    height: float | None = None,
+) -> VGroup:
+    """En lang vektor tegnet som noder: noen noder, ⋮, noen noder, ⋮, noen noder.
+
+    Hver node fylles etter verdien sin, akkurat som pikselen den kommer fra.
+    `fill=False` tegner dem tomme, men tar vare på verdiene i `values`, slik at
+    en scene kan tenne dem senere. Gruppa får med seg `nodes`, `indices`,
+    `values`, `entries` (noden med etikettene sine) og `y_of(i)` — høyden en
+    vilkårlig vektorindeks ville hatt i kolonnen, slik at animasjoner kan lande
+    der tallet hører hjemme."""
+    vals = np.asarray(values, dtype=np.float64).reshape(-1)
+    groups = _column_indices(vals, n_top, n_mid, n_bottom)
+
+    step = 2 * radius + buff
+    nodes, entries, dots = VGroup(), [], VGroup()
+    indices, shown_values, dot_indices = [], [], []
+    idx_labels, val_labels = [], []
+
+    y = 0.0
+    for gi, group in enumerate(groups):
+        if gi:
+            d = _vdots(radius).move_to(np.array([0.0, y - step * 0.15, 0.0]))
+            dots.add(d)
+            dot_indices.append((groups[gi - 1][-1] + group[0]) / 2)
+            y -= step * 1.3
+        for i in group:
+            v = float(np.clip(vals[i], 0, 1))
+            node = neuron(radius=radius, value=v if fill else 0.0, color=color)
+            node.move_to(np.array([0.0, y, 0.0]))
+            nodes.add(node)
+            indices.append(int(i))
+            shown_values.append(v)
+            entry = node
+            if labels:
+                entry = VGroup(node)
+                lab_i = mono(f"x[{i}]", size=label_size, color=DIM)
+                lab_v = mono(f"{v:.2f}", size=label_size, color=GOLD if v > 0.01 else MUTED)
+                idx_labels.append(lab_i)
+                val_labels.append(lab_v)
+                entry.add(lab_i, lab_v)
+            entries.append(entry)
+            y -= step
+
+    if labels:
+        # next_to legger høyre kant av indeksen og venstre kant av verdien mot
+        # noden, så begge spaltene står rett uansett hvor mange sifre de har.
+        gap = radius + 0.16
+        for node, lab_i, lab_v in zip(nodes, idx_labels, val_labels):
+            lab_i.next_to(node, LEFT, buff=gap)
+            lab_v.next_to(node, RIGHT, buff=gap)
+
+    group_all = VGroup(*entries, dots)
+    group_all.move_to(ORIGIN)
+    if height is not None:
+        group_all.scale(height / group_all.height)
+
+    def y_of(i: float) -> float:
+        xs = np.array(indices, dtype=float)
+        ys = np.array([n.get_center()[1] for n in nodes])
+        return float(np.interp(float(i), xs, ys))
+
+    group_all.nodes = nodes
+    group_all.entries = VGroup(*entries)
+    group_all.dots = dots
+    group_all.indices = indices
+    group_all.values = shown_values
+    group_all.dot_indices = dot_indices
+    group_all.y_of = y_of
+    return group_all
 
 
 # --- Data --------------------------------------------------------------------
