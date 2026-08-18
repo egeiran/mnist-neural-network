@@ -417,6 +417,16 @@ class NarrationMixin:
         if duration > 1 / config["frame_rate"]:
             self.wait(duration)
 
+    def cue(self, tracker, frac: float) -> None:
+        """Vent til vi er `frac` inn i replikken.
+
+        Alternativet — å spille av alt med én gang og så la
+        get_remaining_duration() spise resten — gjør at grafikken er ferdig
+        etter sju sekunder og blir stående stille i ti. Med cue() kan hvert
+        slag legges der setningen sin er, uten bookmarks."""
+        elapsed = tracker.duration - tracker.get_remaining_duration()
+        self.safe_wait(tracker.duration * frac - elapsed)
+
     @contextmanager
     def narrate(self, text: str):
         text = " ".join(text.split())

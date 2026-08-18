@@ -30,18 +30,35 @@ def dsig(v):
     return sig(v) * (1 - sig(v))
 
 
-def mini_panel(slope: float, label: str, width=2.1, height=1.5) -> VGroup:
-    """Liten graf-rute som viser en rett linje."""
+PANEL_W, PANEL_H = 1.85, 1.3
+# Felles y-skala for alle rutene, valgt så den bratteste (× 1.6) akkurat får
+# plass. Da kan to ruter sammenlignes direkte i stedet for å bli klippet til
+# samme hjørne-til-hjørne-diagonal.
+Y_UNIT = (PANEL_H / 2 * 0.9) / 1.6
+
+
+def mini_panel(f, label: str, color=MUTED, width=PANEL_W, height=PANEL_H) -> VGroup:
+    """Liten graf-rute: f tegnet over x ∈ [−1, 1]."""
     frame = Rectangle(width=width, height=height, stroke_color=DIM, stroke_width=2)
-    y = np.clip(slope * width / 2, -height / 2 + 0.1, height / 2 - 0.1)
-    line = Line(
-        frame.get_center() + LEFT * width / 2 + DOWN * y,
-        frame.get_center() + RIGHT * width / 2 + UP * y,
-        color=MUTED,
-        stroke_width=3,
-    )
-    tag = mono(label, size=18, color=MUTED).next_to(frame, DOWN, buff=0.15)
-    return VGroup(frame, line, tag)
+    lim = height / 2 * 0.94
+    pts = [
+        frame.get_center()
+        + np.array([x * width / 2 * 0.9, float(np.clip(f(x) * Y_UNIT, -lim, lim)), 0.0])
+        for x in np.linspace(-1, 1, 48)
+    ]
+    graph = VMobject(stroke_color=color, stroke_width=3).set_points_smoothly(pts)
+    tag = mono(label, size=17, color=MUTED).next_to(frame, DOWN, buff=0.14)
+    return VGroup(frame, graph, tag)
+
+
+def chain(*parts) -> VGroup:
+    """Ruter med → mellom seg og = foran den siste."""
+    items = []
+    for i, part in enumerate(parts):
+        if i:
+            items.append(mono("=" if i == len(parts) - 1 else "→", size=30, color=MUTED))
+        items.append(part)
+    return VGroup(*items).arrange(RIGHT, buff=0.34)
 
 
 class S04Sigmoid(NarratedScene):
@@ -112,24 +129,49 @@ class S04Sigmoid(NarratedScene):
             self.remove(dot, readout)
             self.play(FadeOut(others), run_time=0.7)
 
-            p1 = mini_panel(0.5, "layer 1:  × W1")
-            p2 = mini_panel(1.1, "layer 2:  × W2")
-            p3 = mini_panel(0.8, "one layer:  × W")
-            arrow = mono("→", size=34, color=MUTED)
-            eqs = mono("=", size=34, color=MUTED)
-            panel = VGroup(p1, arrow, p2, eqs, p3).arrange(RIGHT, buff=0.45)
-            caption = body("stack two straight lines and you still have a straight line", 24, MUTED)
-            caption.next_to(panel, DOWN, buff=0.5)
-            block = VGroup(panel, caption)
+            # Rad 1: to multiplikasjoner faller sammen til én. 0,5 × 1,6 = 0,8,
+            # så den siste ruta er den ekte sammensetningen av de to første.
+            row1 = chain(
+                mini_panel(lambda x: 0.5 * x, "layer 1:  × 0.5"),
+                mini_panel(lambda x: 1.6 * x, "layer 2:  × 1.6"),
+                mini_panel(lambda x: 0.8 * x, "one layer:  × 0.8"),
+            )
+            cap1 = body("two straight lines make one straight line", 23, MUTED)
+            cap1.next_to(row1, DOWN, buff=0.32)
+            block1 = VGroup(row1, cap1).move_to(UP * 2.15)
 
-            self.play(FadeIn(block, shift=UP * 0.2), run_time=1.0)
-            self.wait(min(2.2, max(t.get_remaining_duration() - 1.6, 0.3)))
+            # Rad 2: samme to lag, men med σ imellom. Siste rute er hele kjeden,
+            # og den er ikke en rett linje lenger. (σ-ruta er skalert opp for å
+            # vise formen — de andre deler skala.)
+            row2 = chain(
+                mini_panel(lambda x: 0.5 * x, "layer 1:  × 0.5"),
+                mini_panel(lambda x: (sig(5 * x) - 0.5) * 2.8, "σ", color=ACCENT),
+                mini_panel(lambda x: 1.6 * x, "layer 2:  × 1.6"),
+                mini_panel(lambda x: 1.6 * (sig(5 * x) - 0.5), "one layer:  no such W",
+                           color=ACCENT),
+            )
+            cap2 = body("put σ between them and no single multiply can copy it", 23, MUTED)
+            cap2.next_to(row2, DOWN, buff=0.32)
+            block2 = VGroup(row2, cap2).move_to(DOWN * 0.6)
+
+            # Slagene legges der setningene er: rad 1 mens han snakker om at to
+            # lag faller sammen til ett, rad 2 idet «the sigmoid is what makes
+            # depth mean anything» begynner, og teksten på selve punchlinja.
+            self.cue(t, 0.15)
+            self.play(FadeIn(block1, shift=UP * 0.2), run_time=1.0)
+            # «...something you could have done in one» — pek på siste rute.
+            self.cue(t, 0.45)
+            self.play(Indicate(row1[-1], color=ACCENT, scale_factor=1.06), run_time=0.9)
+
+            self.cue(t, 0.78)
+            self.play(FadeIn(block2, shift=UP * 0.2), run_time=1.0)
 
             punch = body("σ is what makes depth mean anything", 28, ACCENT)
-            punch.move_to(caption)
-            self.play(Transform(caption, punch), run_time=0.8)
-            self.wait(max(t.get_remaining_duration() - 0.9, 0.2))
-            self.play(FadeOut(block), FadeIn(others), run_time=0.8)
+            punch.move_to(DOWN * 2.4)
+            self.cue(t, 0.90)
+            self.play(FadeIn(punch, shift=UP * 0.15), run_time=0.8)
+            self.wait(max(t.get_remaining_duration() - 0.8, 0.2))
+            self.play(FadeOut(VGroup(block1, block2, punch)), FadeIn(others), run_time=0.8)
 
         # --- Metning ---------------------------------------------------------
         with self.narrate(

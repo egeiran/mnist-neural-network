@@ -121,6 +121,7 @@ def main():
 
     # Ekte gradienter på en utrent batch (scene 8)
     Xb, Yb = X_train[:BATCH_SIZE], y_train[:BATCH_SIZE]
+    batch_labels = np.argmax(Yb, axis=1)
     _, Zsb, Asb = forward(Xb, Ws, bs)
     dWs_b, dbs_b = backward(Yb, Zsb, Asb, Ws)
     dW1_init, dW2_init = dWs_b[0].copy(), dWs_b[1].copy()
@@ -222,6 +223,9 @@ def main():
         trained_loss=trained_loss,
         trained_hidden=trained_hidden,
         target_onehot=demo_y[0],
+        # scene 5 / 8 — den samme utrente batchen
+        batch_images=Xb,
+        batch_labels=batch_labels,
         # scene 8
         dW1_init=dW1_init,
         dW2_init=dW2_init,

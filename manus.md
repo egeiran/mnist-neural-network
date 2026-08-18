@@ -101,7 +101,7 @@ Then the sigmoid curve from Scene 4 slides in from the side, the number travels 
 
 > One neuron asks one question. A layer is a hundred and twenty-eight neurons asking a hundred and twenty-eight different questions at the same time.
 >
-> Each one has its own seven hundred and eighty-four weights, so I stack them into a grid — a matrix. Seven eighty-four by one twenty-eight.
+> Each one has its own seven hundred and eighty-four weights, so I stack them into a grid — a matrix. Seven eighty-four by one twenty-eight. Right now they're random numbers — what they become is the last thing I'll show you.
 >
 > And now the whole layer is one line of code. Inputs times weights, plus bias. That's not new math, it's just bookkeeping. The matrix multiply does a hundred thousand multiply-and-adds in a single operation, and it does it for thirty-two images at once.
 >
@@ -135,21 +135,27 @@ Then the sigmoid curve from Scene 4 slides in from the side, the number travels 
 
 ## Scene 7 — Gradient descent (4:35–5:15)
 
-**Manim:** A ball on a 1D curve, rolling downhill in steps. Then show a too-large learning rate — ball overshoots and bounces out. Then switch to a 3D surface with ThreeDScene and roll down that. Caption: "now imagine 101,770 dimensions."
+**Manim:** The `loss = 2.72` from Scene 6 flies onto the y-axis and becomes the height of a ball on a 1D curve. The y-axis is real loss the whole way: the ball starts at the untrained loss (2.72) and the valley floor is the loss the same image ended on after training (0.14). The update rule `w ← w − lr × slope` appears with a live slope readout; the first step is decomposed into an arrow of length `lr × slope` and a drop onto the curve. Ten steps with ghost dots left behind, so the shrinking step size is visible. Then three panels side by side — same curve, same start, `lr = 0.15 / 1.0 / 7.0` — running at the same time, with a live loss under each. Then a 3D surface with labelled axes (`weight 1`, `weight 2`, `loss`) and a real gradient descent walked down it. Caption: "now imagine 101,770 dimensions."
 
 **VO:**
 
 > There are a hundred thousand weights in this network, and the loss depends on every single one of them.
 >
-> Picture it as a landscape. Every position is one setting of all the weights, and the height is the loss. I want the bottom of the valley.
+> Picture it as a landscape. Every position is one setting of all the weights, and the height is the loss. I want the bottom.
 >
-> I can't see the landscape — it has a hundred thousand dimensions. But I can feel the slope under my feet. So I take a small step downhill, and repeat.
+> I can't see this landscape — it has a hundred thousand dimensions. But wherever I stand, I can measure the slope for every weight at once. That's the gradient. So: small step downhill, and repeat.
 >
-> Step too big and you fly straight over the valley and end up worse than you started. Step too small and you're there all week. That's the learning rate, and mostly you find it by trying.
+> Too big a step and you fly over the valley, and end up worse than you started. Too small and you're there all week. That's the learning rate — mine is one, found by trying.
+>
+> That's one weight. Here are two — a whole landscape to walk down. Now imagine a hundred and one thousand of them.
 
 **On-screen:**
 - `101,770 parameters`
+- `w ← w − lr × slope`
 - `learning rate = 1.0`
+- `W -= lr * dW`
+
+**Note:** every number in the scene comes from `run.npz` — the curve is scaled so its start and its floor are the real before/after loss for the demo image, and the descent is a real gradient descent run at `lr = 1.0`, the same rate the training used. Naming the gradient here is what sets up Scene 8. Renders at ~56 s, so the slot above is optimistic — if the film runs long, this scene and Scene 9 are still the two to trim.
 
 ---
 
