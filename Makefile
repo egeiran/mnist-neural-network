@@ -30,33 +30,41 @@ test:
 artifacts:
 	$(PY) -m nn.artifacts
 
-# Én scene, rask forhåndsvisning:  make scene S=s04_sigmoid
+# S= kan skrives kort: S=s03 finner scenes/s03_one_neuron.py. Fullt filnavn
+# virker som før. Feiler med en gang hvis ingenting — eller flere ting — matcher.
+SCENEGLOB = $(strip $(if $(wildcard scenes/$(S).py),scenes/$(S).py,$(wildcard scenes/$(S)*.py)))
+SCENEFILE = $(if $(word 2,$(SCENEGLOB)),\
+              $(error S=$(S) matcher flere scener: $(SCENEGLOB)),\
+              $(if $(SCENEGLOB),$(SCENEGLOB),\
+                $(error Fant ingen scene som matcher S=$(S))))
+
+# Én scene, rask forhåndsvisning:  make scene S=s04
 # Klassenavnet kan utelates — da tas alt som ligger i fila.
 # N=3,6 rendrer bare animasjon 3 til 6.  FAST=1 korter ned all ventetid.
 scene:
-	PYTHONPATH=. $(MANIM) -pql $(TURBO) $(ALLFLAG) $(NFLAG) scenes/$(S).py $(C)
+	PYTHONPATH=. $(MANIM) -pql $(TURBO) $(ALLFLAG) $(NFLAG) $(SCENEFILE) $(C)
 
 hq:
-	PYTHONPATH=. $(MANIM) -pqh $(TURBO) $(ALLFLAG) scenes/$(S).py $(C)
+	PYTHONPATH=. $(MANIM) -pqh $(TURBO) $(ALLFLAG) $(SCENEFILE) $(C)
 
 # --- Forhåndsvisning ---------------------------------------------------------
 # Live OpenGL-vindu, ingen fil skrives, ingen venting på ffmpeg. Panorer med
 # musa, zoom med scroll, lukk vinduet (eller ctrl-c) når du er ferdig.
-#   make preview S=s04_sigmoid
-#   make preview S=s04_sigmoid FAST=0   (ekte timing)
+#   make preview S=s04
+#   make preview S=s04 FAST=0   (ekte timing)
 preview:
-	PYTHONPATH=. FAST=$${FAST:-1} $(MANIM) --renderer=opengl -p $(ALLFLAG) $(NFLAG) scenes/$(S).py $(C)
+	PYTHONPATH=. FAST=$${FAST:-1} $(MANIM) --renderer=opengl -p $(ALLFLAG) $(NFLAG) $(SCENEFILE) $(C)
 
 # Bare ett bilde som PNG — raskeste måten å sjekke komposisjon og plassering på.
-#   make still S=s04_sigmoid          (siste bilde i scenen)
-#   make still S=s04_sigmoid N=0,12   (bildet etter animasjon 12)
+#   make still S=s04          (siste bilde i scenen)
+#   make still S=s04 N=0,12   (bildet etter animasjon 12)
 still:
-	PYTHONPATH=. FAST=$${FAST:-1} $(MANIM) -spql $(TURBO) $(ALLFLAG) $(NFLAG) scenes/$(S).py $(C)
+	PYTHONPATH=. FAST=$${FAST:-1} $(MANIM) -spql $(TURBO) $(ALLFLAG) $(NFLAG) $(SCENEFILE) $(C)
 
 # Rendrer på nytt hver gang du lagrer. Stillbilde som standard, V=1 gir video.
-#   make watch S=s04_sigmoid
+#   make watch S=s04
 watch:
-	$(PY) tools/watch.py "PYTHONPATH=. FAST=$${FAST:-1} $(MANIM) $(if $(V),-pql,-spql) $(TURBO) $(ALLFLAG) $(NFLAG) scenes/$(S).py $(C)"
+	$(PY) tools/watch.py "PYTHONPATH=. FAST=$${FAST:-1} $(MANIM) $(if $(V),-pql,-spql) $(TURBO) $(ALLFLAG) $(NFLAG) $(SCENEFILE) $(C)"
 
 # Interaktiv lekegrind: levende vindu + IPython-skall. Se scenes/sandbox.py.
 play:
