@@ -18,6 +18,19 @@ LR = 1.0
 BATCH_SIZE = 32
 EPOCHS = 10
 OUT = "artifacts/run.npz"
+SNAPSHOTS = 40  # antall vekt-øyeblikksbilder under trening
+
+
+def snapshot_steps(total_steps, n=SNAPSHOTS):
+    """Log-spredte batch-nummer å ta vare på vektene ved.
+
+    Endringen i W1 er raskest tidlig, så jevn spredning ville gitt ett bilde av
+    starten og trettini av slutten. Vi begynner først på batch 20: under det
+    ligger snapshotene så tett at de er visuelt identiske, og de ville spist
+    halve spilletiden i tidsforløpet.
+    """
+    steps = np.round(np.geomspace(20, total_steps, n - 1)).astype(int)
+    return np.unique(np.concatenate([[0], steps]))
 
 
 def grad_check_rows(seed=0, n=5):
@@ -119,12 +132,24 @@ def main():
     epoch_acc = []
     first_loss = None
 
+    steps_per_epoch = split // BATCH_SIZE
+    snap_at = set(snapshot_steps(steps_per_epoch * EPOCHS).tolist())
+    W1_snaps = []
+    snap_steps = []
+    step = 0
+
     for e in range(EPOCHS):
         losses = []
         perm = np.random.permutation(len(X_train))
         X_shuffled, y_shuffled = X_train[perm], y_train[perm]
 
         for i in range(0, split, BATCH_SIZE):
+            if step in snap_at:
+                # float16 halverer fila; vi viser dem uansett som 8-bits bilder
+                W1_snaps.append(Ws[0].astype(np.float16).copy())
+                snap_steps.append(step)
+            step += 1
+
             X = X_shuffled[i : i + BATCH_SIZE]
             y = y_shuffled[i : i + BATCH_SIZE]
 
@@ -149,6 +174,9 @@ def main():
         acc = float(np.mean(pred == y_test))
         epoch_acc.append(acc)
         print(f"epoch {e + 1:>2} — loss {epoch_loss[-1]:.4f}  acc {acc * 100:.2f}%")
+
+    W1_snaps.append(Ws[0].astype(np.float16).copy())
+    snap_steps.append(step)
 
     # --- Etter trening -------------------------------------------------
     A_out, Zs_t, As_t = forward(X_test, Ws, bs)
@@ -209,6 +237,9 @@ def main():
         epoch_acc=np.array(epoch_acc),
         first_loss=first_loss,
         # scene 11
+        W1_snaps=np.stack(W1_snaps),
+        snap_steps=np.array(snap_steps),
+        steps_per_epoch=steps_per_epoch,
         W1_init=W1_init,
         W1_final=Ws[0],
         W2_final=Ws[1],
@@ -229,6 +260,7 @@ def main():
     print(f"  epoch 1 acc:  {epoch_acc[0] * 100:.2f}%")
     print(f"  epoch 10 acc: {epoch_acc[-1] * 100:.2f}%")
     print(f"  parametre:    {sum(W.size for W in Ws) + sum(b.size for b in bs):,}")
+    print(f"  W1-snapshots: {len(W1_snaps)} (batch {snap_steps[0]}–{snap_steps[-1]})")
     print(buf.getvalue())
 
 

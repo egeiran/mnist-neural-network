@@ -119,9 +119,16 @@ def normalize_signed(arr: np.ndarray) -> np.ndarray:
     return (arr / m + 1) / 2
 
 
-def signed_rgb(M: np.ndarray, gamma: float = 0.45) -> np.ndarray:
-    """Vektmatrise → RGB: blått for positivt, rødt for negativt."""
-    scale = np.percentile(np.abs(M), 99.0) + 1e-12
+def signed_rgb(M: np.ndarray, gamma: float = 0.45, scale: float | None = None) -> np.ndarray:
+    """Vektmatrise → RGB: blått for positivt, rødt for negativt.
+
+    scale=None normaliserer hver matrise for seg. Skal flere bilder sammenlignes
+    — nabofelt i et ark, eller samme felt over tid — må de dele én fast skala,
+    ellers flimrer kontrasten og man ser ikke at vektene faktisk vokser.
+    """
+    if scale is None:
+        scale = np.percentile(np.abs(M), 99.0)
+    scale = float(scale) + 1e-12
     n = np.clip(M / scale, -1, 1)
     pos = np.clip(n, 0, 1) ** gamma
     neg = np.clip(-n, 0, 1) ** gamma
@@ -129,6 +136,32 @@ def signed_rgb(M: np.ndarray, gamma: float = 0.45) -> np.ndarray:
     red = np.array(ManimColor(WARM).to_rgb())
     rgb = pos[..., None] * blue + neg[..., None] * red
     return (np.clip(rgb, 0, 1) * 255).astype(np.uint8)
+
+
+def weight_sheet(
+    W: np.ndarray,
+    rows: int = 8,
+    cols: int = 16,
+    gap: int = 2,
+    scale: float | None = None,
+) -> np.ndarray:
+    """Første lags vekter → ett ark: hver kolonne i W er ett nevron, brettet
+    tilbake til 28×28. W har form (784, n_nevroner)."""
+    h = rows * 28 + (rows - 1) * gap
+    w = cols * 28 + (cols - 1) * gap
+    canvas = np.zeros((h, w, 3), dtype=np.uint8)
+    canvas[:, :] = (np.array(ManimColor(BG).to_rgb()) * 255).astype(np.uint8)
+    for k in range(min(W.shape[1], rows * cols)):
+        r, c = divmod(k, cols)
+        tile = signed_rgb(W[:, k].reshape(28, 28), scale=scale)
+        y, x = r * (28 + gap), c * (28 + gap)
+        canvas[y : y + 28, x : x + 28] = tile
+    return canvas
+
+
+def weight_scale(W: np.ndarray, pct: float = 99.5) -> float:
+    """Én fast fargeskala for et helt ark / en hel tidsserie."""
+    return float(np.percentile(np.abs(np.asarray(W, dtype=np.float32)), pct))
 
 
 def pixel_grid(vec: np.ndarray, cell: float = 0.16, stroke: float = 0.6) -> VGroup:

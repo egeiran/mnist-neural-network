@@ -211,11 +211,11 @@ Then the sigmoid curve from Scene 4 slides in from the side, the number travels 
 
 ## Scene 11 — What it learned, and what it missed (6:50–7:30)
 
-**Manim:** Grid of the 128 first-layer weight vectors reshaped to 28×28. Show epoch 0 (noise) then epoch 10 (structured noise). Then cut to the 20 most confident misclassifications with `true → predicted` labels.
+**Manim:** Grid of the 128 first-layer weight vectors reshaped to 28×28, played as a time-lapse over the whole training run (40 log-spaced snapshots from `run.npz`, one fixed colour scale throughout, batch counter above). Then cut to the 20 most confident misclassifications with `true → predicted` labels.
 
 **VO:**
 
-> Here's what the hidden layer actually learned — each square is one neuron's weights, drawn back out as an image.
+> Here's what the hidden layer actually learned — each square is one neuron's weights, drawn back out as an image. Watch them form.
 >
 > I was expecting stroke detectors. Clean little edges and curves. That's not what I got. It's structured noise. The network found something that works, not something that explains itself. That's worth sitting with.
 >
@@ -226,6 +226,7 @@ Then the sigmoid curve from Scene 4 slides in from the side, the number travels 
 > Every equation in this video is one I typed out and got wrong at least once first.
 
 **On-screen:**
+- `batch 20 / 18,750` → `batch 18,750 / 18,750`
 - `true → predicted`
 - `97.47%`
 

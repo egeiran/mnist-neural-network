@@ -1,8 +1,11 @@
+import os
+
 import numpy as np
 import matplotlib.pyplot as plt
 
 from nn.network import init_params, forward, backward, loss
 from nn.data import load_data
+from nn.weightviz import LiveWeights
 
 if __name__ == "__main__":
     print()
@@ -21,6 +24,10 @@ if __name__ == "__main__":
     split = 60000
     batch_size = 32
     epochs = 10
+
+    # LIVE=1: se vektene bli til mens den trener
+    live = LiveWeights() if os.environ.get("LIVE", "0") not in ("0", "") else None
+    step = 0
 
     # Traning loop
     for e in range(epochs):
@@ -43,6 +50,11 @@ if __name__ == "__main__":
             for j in range(len(Ws)):
                 Ws[j] -= lr * dWs[j]
                 bs[j] -= lr * dbs[j]
+
+            if live is not None:
+                live.update(Ws[0], step, extra=f"   epoch {e + 1}/{epochs}   loss {l:.3f}")
+            step += 1
+
         losses = np.array(losses)
         if e == 0:
             print("First loss =", losses[0])

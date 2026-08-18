@@ -4,6 +4,10 @@ MANIM = .venv/bin/manim
 train:
 	$(PY) -m nn.train
 
+# Samme, men med et vindu som viser vektene bli til underveis
+train-live:
+	LIVE=1 $(PY) -m nn.train
+
 test:
 	$(PY) -m nn.network
 
@@ -36,4 +40,4 @@ clean:
 	rm -rf media/videos media/images
 	find . -name __pycache__ -type d -exec rm -rf {} +
 
-.PHONY: train test artifacts scene hq video video-preview video-hq video-vo clean
+.PHONY: train train-live test artifacts scene hq video video-preview video-hq video-vo clean
