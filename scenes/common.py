@@ -234,13 +234,36 @@ WORDS_PER_SEC = 2.75
 SENTENCE_PAUSE = 0.45
 COMMA_PAUSE = 0.15
 
+# --- Rask forhåndsvisning ----------------------------------------------------
+# Det meste av en scenes lengde er ventetid mens den tenkte fortellerstemmen
+# snakker. FAST=1 estimerer narrasjonen til en firedel, så scenen rendres på en
+# brøkdel av tiden. SPEED=0.5 gir finkontroll (1.0 = ekte lengde). Timingen blir
+# da ikke filmens timing — bruk det til å se på grafikken, ikke på rytmen. Med
+# ekte voiceover ignoreres begge: lyden har den lengden den har.
+
+
+def _narration_scale() -> float:
+    if USE_VOICE:
+        return 1.0
+    raw = os.environ.get("SPEED", "").strip()
+    if raw:
+        return max(float(raw), 0.02)
+    if os.environ.get("FAST", "0").lower() not in ("0", "", "false", "no"):
+        return 0.25
+    return 1.0
+
+
+NARRATION_SCALE = _narration_scale()
+FAST_PREVIEW = NARRATION_SCALE < 1.0
+
 
 def estimate_duration(text: str) -> float:
     clean = _BOOKMARK.sub("", text)
     words = len(clean.split())
     sentences = len(re.findall(r"[.!?]", clean))
     commas = len(re.findall(r"[,;—:]", clean))
-    return words / WORDS_PER_SEC + sentences * SENTENCE_PAUSE + commas * COMMA_PAUSE
+    raw = words / WORDS_PER_SEC + sentences * SENTENCE_PAUSE + commas * COMMA_PAUSE
+    return raw * NARRATION_SCALE
 
 
 class _EstimatedTracker:
@@ -303,7 +326,7 @@ class NarrationMixin:
                 self.safe_wait(tracker.get_remaining_duration())
 
     def beat(self, t: float = 0.4) -> None:
-        self.wait(t)
+        self.safe_wait(t * NARRATION_SCALE)
 
     def clear_out(self, run_time: float = 0.8) -> None:
         """Toner ut alt — hver scene slutter i svart så klippene skjøtes rent."""

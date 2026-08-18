@@ -46,6 +46,12 @@ if [ "${VOICEOVER:-0}" != "0" ]; then
   .venv/bin/python prepare_vo.py
 fi
 
+# FAST/SPEED hører til forhåndsvisning — sniker de seg inn her blir filmen
+# kortet ned uten at man ser det før etterpå.
+if [ "${FAST:-0}" != "0" ] || [ -n "${SPEED:-}" ]; then
+  echo "advarsel: FAST/SPEED er satt — narrasjonen kortes ned i denne filmen"
+fi
+
 LIST="$(mktemp)"
 trap 'rm -f "$LIST"' EXIT
 
@@ -53,7 +59,10 @@ for entry in "${SCENES[@]}"; do
   file="${entry%%:*}"
   klass="${entry##*:}"
   echo "── rendrer $klass ($RES)"
+  # --disable_caching: hashingen koster mer enn cachen sparer her.
+  # --max-inflight-encoders: ffmpeg encoder mens neste animasjon tegnes.
   PYTHONPATH=. "$MANIM" --config_file render.cfg -q"$QUALITY" \
+    --disable_caching --max-inflight-encoders 4 \
     "scenes/$file.py" "$klass" >/dev/null
   mp4="media/videos/$file/$RES/$klass.mp4"
   [ -f "$mp4" ] || { echo "fant ikke $mp4"; exit 1; }
