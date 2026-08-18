@@ -1,6 +1,6 @@
 import numpy as np
 from manim import *
-from network import init_params, forward
+from nn.network import init_params, forward
 
 class Arkitektur(Scene):
     def construct(self):

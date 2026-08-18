@@ -19,13 +19,13 @@ Word count of VO below: ~1050, which lands around 7 min at normal narration pace
 >
 > There is no rule you could write down. No list of "if the top is flat and there's a loop at the bottom." People have tried, and it does not work, because every person writes a five slightly differently.
 >
-> So instead of writing the rules, I built something that finds the rules on its own. About four hundred lines of Python, no machine learning libraries, just NumPy for the matrix math. It gets ninety-seven percent of handwritten digits right.
+> So instead of writing the rules, I built something that finds the rules on its own. About four hundred lines of Python, no machine learning libraries, just NumPy for the matrix math. It gets ninety-seven and a half percent of handwritten digits right.
 >
 > Here's how it works.
 
 **On-screen:**
 - `no libraries. just NumPy.`
-- `97.33% accuracy`
+- `97.47% accuracy`
 
 ---
 
@@ -125,17 +125,17 @@ Then the sigmoid curve from Scene 4 slides in from the side, the number travels 
 >
 > To fix that I need to measure how wrong it is. The correct answer for a five is this — a one in slot five, zeros everywhere else. Subtract, square each difference so the negatives don't cancel, add them up. One number. The loss.
 >
-> Untrained, mine started at two point five seven. The whole job now is making that number smaller.
+> Untrained, mine started at two point seven. The whole job now is making that number smaller.
 
 **On-screen:**
 - `target: [0,0,0,0,0,1,0,0,0,0]`
-- `loss = 2.57`
+- `loss = 2.72`
 
 ---
 
 ## Scene 7 — Gradient descent (4:35–5:15)
 
-**Manim:** A ball on a 1D curve, rolling downhill in steps. Then show a too-large learning rate — ball overshoots and bounces out. Then switch to a 3D surface with ThreeDScene and roll down that. Caption: "now imagine 100,480 dimensions."
+**Manim:** A ball on a 1D curve, rolling downhill in steps. Then show a too-large learning rate — ball overshoots and bounces out. Then switch to a 3D surface with ThreeDScene and roll down that. Caption: "now imagine 101,770 dimensions."
 
 **VO:**
 
@@ -148,7 +148,7 @@ Then the sigmoid curve from Scene 4 slides in from the side, the number travels 
 > Step too big and you fly straight over the valley and end up worse than you started. Step too small and you're there all week. That's the learning rate, and mostly you find it by trying.
 
 **On-screen:**
-- `100,480 weights`
+- `101,770 parameters`
 - `learning rate = 1.0`
 
 ---
@@ -185,9 +185,9 @@ Then the sigmoid curve from Scene 4 slides in from the side, the number travels 
 > The two methods agreed to ten decimal places. That's the moment I knew the math was right.
 
 **On-screen:**
-- `numerical:  0.02217081`
-- `analytical: 0.02217081`
-- `rel. error: 1.2e-10 ✓`
+- `numerical:   0.10971767`
+- `analytical:  0.10971767`
+- `rel. error: 1.0e-11 ✓`
 
 ---
 
@@ -199,13 +199,13 @@ Then the sigmoid curve from Scene 4 slides in from the side, the number travels 
 
 > Then it's just: show it thirty-two images, measure the error, nudge every weight downhill, repeat. Eighteen hundred and seventy-five times per pass through the data. Ten passes.
 >
-> After one pass it was already at ninety-three percent. After ten, ninety-seven point three.
+> After one pass it was already at ninety-three percent. After ten, ninety-seven point five.
 >
-> Loss went down every single epoch and accuracy went up every single epoch. No bouncing, no plateau. That smoothness is what correct backprop looks like.
+> Loss went down every single epoch, and accuracy climbed almost all the way — one small wobble near the end. No blow-ups, no plateau. That smoothness is what correct backprop looks like.
 
 **On-screen:**
-- `epoch 1  — 92.66%`
-- `epoch 10 — 97.33%`
+- `epoch 1  — 93.02%`
+- `epoch 10 — 97.47%`
 
 ---
 
@@ -219,15 +219,15 @@ Then the sigmoid curve from Scene 4 slides in from the side, the number travels 
 >
 > I was expecting stroke detectors. Clean little edges and curves. That's not what I got. It's structured noise. The network found something that works, not something that explains itself. That's worth sitting with.
 >
-> And these are the ones it got wrong, ranked by how confident it was while being wrong. Some of them are genuinely ambiguous. A few are mislabeled in the dataset itself. The last two percent isn't only a model problem.
+> And these are the ones it got wrong, ranked by how confident it was while being wrong. Some of them are genuinely ambiguous. A few are mislabeled in the dataset itself. The last two and a half percent isn't only a model problem.
 >
-> Ninety-seven point three percent. Four hundred lines. No libraries.
+> Ninety-seven point five percent. About four hundred lines. No libraries.
 >
 > Every equation in this video is one I typed out and got wrong at least once first.
 
 **On-screen:**
 - `true → predicted`
-- `97.33%`
+- `97.47%`
 
 ---
 
@@ -242,3 +242,44 @@ Then the sigmoid curve from Scene 4 slides in from the side, the number travels 
 **Cutting to length:** if this runs long, Scene 9 (gradient check) is the first to shorten and Scene 7 (gradient descent) the second. Keep Scene 11 whole — the "it's structured noise" beat is the most honest thing in the script and the reason to watch to the end.
 
 **Numbers to double check before recording:** all figures above are from your actual run. If you retrain after moving the shuffle inside the epoch loop, the accuracy will likely change — update Scenes 1, 10, and 11.
+
+---
+
+## Hvordan filmen bygges
+
+Alle tall som vises på skjermen kommer fra én ekte treningskjøring, lagret i `artifacts/run.npz`:
+
+```
+make artifacts     # trener 10 epoker og lagrer vekter, loss, treff og bom
+make video         # rendrer alle 11 scenene i 720p30 og skjøter dem sammen
+make video-hq      # samme i 1080p60
+make video-vo      # samme, men med ElevenLabs-voiceover (bruker API-kreditter)
+```
+
+Hver scene ligger i `scenes/sNN_*.py` og arver `NarratedScene` fra `scenes/common.py`.
+Replikkene ligger i `self.narrate(...)`-blokker: uten `VOICEOVER=1` beregnes lengden
+ut fra teksten, med `VOICEOVER=1` byttes de mot ekte `manim-voiceover`-blokker uten at
+scenekoden endres.
+
+### Voiceover
+
+`make video-vo` kjører `prepare_vo.py` først, som genererer alle 48 replikkene (~6 800
+tegn = ~6 800 ElevenLabs-credits) med retry og backoff, og legger dem i
+`media/voiceovers/`. Først når hele cachen er på plass starter rendringen — ellers
+ryker hele bygget hvis ett API-kall møter «heavy traffic». Cachen er nøklet på teksten,
+så rerender koster ingenting; bare replikker du endrer ordlyden på genereres på nytt.
+
+Stemme og modell styres med miljøvariabler: `VOICE_NAME` (standard Adam), `VOICE_ID`,
+`VOICE_MODEL` (standard `eleven_multilingual_v2` — kvalitetsmodellen, også for engelsk;
+`eleven_flash_v2_5` er halv pris og lavere kvalitet).
+
+API-nøkkelen her mangler `voices_read`, og `manim-voiceover` slår alltid opp stemmelista
+selv når du gir den en id. `DirectVoiceService` i `scenes/common.py` går derfor rett på
+voice_id. Gir du nøkkelen `voices_read` senere, kan den klassen erstattes med
+`ElevenLabsService`.
+
+Denne maskinen har ingen LaTeX-installasjon, så alle formler er satt i monospace `Text`
+i stedet for `MathTex`. Legger du inn LaTeX senere kan de byttes ut scene for scene.
+
+**Tall fra kjøringen filmen er bygget på:** første loss 2.71, epoke 1 = 93.02 %,
+epoke 10 = 97.47 %, 101 770 parametre, gradientsjekk ned til 1.0e-11.

@@ -3,3 +3,5 @@ __pycache__
 media
 .venv
 *.pyc
+# rendret film (bygges med ./build.sh)
+artifacts/*.mp4
