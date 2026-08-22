@@ -1,0 +1,10 @@
+# Nettverket selv trenger bare numpy. Resten er verktøy rundt: sklearn henter
+# MNIST, matplotlib tegner treningskurver, og manim-greiene lager filmen.
+numpy>=1.26
+scikit-learn>=1.4        # kun for å hente MNIST fra OpenML — ikke til nettverket
+matplotlib>=3.8
+
+# Film
+manim>=0.18
+manim-voiceover[elevenlabs]>=0.3.7
+python-dotenv>=1.0
