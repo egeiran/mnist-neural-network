@@ -1,10 +1,10 @@
 /**
- * All tekst på siden, på begge språk. Samme mønster som lib/copy.ts på
- * eivindgeiran.no: én kilde, ingen tekst gjemt inne i komponentene.
+ * All tekst på siden, på begge språk. Én kilde — ingen tekst ligger gjemt inne
+ * i en komponent.
  *
- * Tall står bevisst IKKE her — de kommer fra src/data/run.json, som genereres
- * av tools/export_web.py. Retrener du nettverket, endrer tallene seg av seg
- * selv, og teksten fortsetter å stemme.
+ * Tall står bevisst IKKE her. De kommer fra src/data/run.json, som genereres av
+ * tools/export_web.py, slik at en ny treningskjøring oppdaterer tallene uten at
+ * teksten rundt dem må skrives om.
  */
 
 export type Lang = "no" | "en";
@@ -122,7 +122,7 @@ const no: Copy = {
       "Hvordan nettverket virker, fra én piksel til ferdig trent modell. Hver animasjon er skrevet i Manim, og hvert tall som vises på skjermen er hentet fra den samme treningskjøringen som driver demoen over.",
     play: "Spill av filmen",
     missing:
-      "Filmen er ikke publisert ennå. Når den er rendret, legges YouTube-ID-en inn i src/lib/site.ts, og den dukker opp her.",
+      "Filmen er ikke publisert ennå.",
     chapters: "Kapitler",
   },
   how: {
@@ -263,7 +263,7 @@ const en: Copy = {
       "How the network works, from a single pixel to a trained model. Every animation is written in Manim, and every number on screen comes from the same training run that powers the demo above.",
     play: "Play the film",
     missing:
-      "The film is not published yet. Once it is rendered, drop the YouTube ID into src/lib/site.ts and it appears here.",
+      "The film is not published yet.",
     chapters: "Chapters",
   },
   how: {

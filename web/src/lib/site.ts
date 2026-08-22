@@ -1,8 +1,4 @@
-/**
- * Ett sted for alt som peker utover, og for det ene som mangler:
- * YouTube-ID-en. Når filmen er rendret og lastet opp, er dette den eneste
- * linja som må endres for at den skal dukke opp på siden.
- */
+/** Ett sted for alt siden peker utover til. */
 
 export const SITE = {
   url: "https://mnist.eivindgeiran.no",
@@ -14,20 +10,15 @@ export const SITE = {
   youtubeId: "3KQHb3Rx8PM" as string,
 
   /**
-   * Kapittellista under er de PLANLAGTE tidene fra manus.md, ikke målt på den
-   * ferdige filmen. Med ekte tale får hver scene den lengden lyden har, så de
-   * siste kapitlene kan ligge et godt stykke unna.
-   *
-   * Sett denne til true når du har sjekket `at`-verdiene mot filmen — da vises
-   * kapitlene på siden. Til da er de skjult, for et kapittel som hopper til feil
-   * sted er verre enn ingen kapitler.
+   * Kapitlene vises bare når tidene under er målt på den publiserte filmen.
+   * Et kapittelmerke som hopper til feil sted er verre enn ingen kapitler, så
+   * de holdes skjult så lenge tidene er anslag.
    */
   chaptersVerified: false,
 
   /**
-   * Kapitlene i filmen, med starttid i sekunder. Disse svarer til scenene i
-   * scenes/ og til tidspunktene i manus.md. Lim samme liste inn i
-   * YouTube-beskrivelsen, så får videoen kapittelmerker der også.
+   * Kapitlene i filmen, med starttid i sekunder. Én per scene i scenes/.
+   * Tidene her er scenegrensene fra manus.md — altså anslag, ikke målinger.
    */
   chapters: [
     { at: 0, no: "Problemet", en: "The problem" },
