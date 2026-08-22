@@ -5,3 +5,5 @@ media
 *.pyc
 # rendret film (bygges med ./build.sh)
 artifacts/*.mp4
+.DS_Store
+node_modules
