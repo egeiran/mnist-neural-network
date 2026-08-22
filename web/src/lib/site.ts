@@ -10,8 +10,19 @@ export const SITE = {
   repo: "https://github.com/egeiran/mnist-neural-network",
   home: "https://eivindgeiran.no",
 
-  /** Sett til YouTube-ID-en (delen etter ?v=) når filmen er publisert. */
-  youtubeId: "" as string,
+  /** YouTube-ID-en (delen etter ?v= eller youtu.be/). */
+  youtubeId: "r_4mrJRWJB8" as string,
+
+  /**
+   * Kapittellista under er de PLANLAGTE tidene fra manus.md, ikke målt på den
+   * ferdige filmen. Med ekte tale får hver scene den lengden lyden har, så de
+   * siste kapitlene kan ligge et godt stykke unna.
+   *
+   * Sett denne til true når du har sjekket `at`-verdiene mot filmen — da vises
+   * kapitlene på siden. Til da er de skjult, for et kapittel som hopper til feil
+   * sted er verre enn ingen kapitler.
+   */
+  chaptersVerified: false,
 
   /**
    * Kapitlene i filmen, med starttid i sekunder. Disse svarer til scenene i

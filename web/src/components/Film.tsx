@@ -45,7 +45,7 @@ export default function Film({ copy, lang }: { copy: Copy; lang: Lang }) {
         )}
       </div>
 
-      {id ? (
+      {id && SITE.chaptersVerified ? (
         <>
           <p className="subhead">{copy.video.chapters}</p>
           <div className="chapters">

@@ -32,19 +32,25 @@ Dette er samme oppsett som `nhl-ml`, `tilbud` og `towerdefense` allerede har, s�
 DNS-en din har mønsteret fra før. Sertifikatet ordner Vercel automatisk når
 oppslaget svarer, vanligvis innen et par minutter.
 
-## 3. Filmen inn på siden
+## 3. Kapittelmerkene i filmen
 
-Siden fungerer uten filmen — videoseksjonen sier bare at den ikke er publisert
-ennå. Når den er rendret og lastet opp til YouTube:
+Filmen ligger allerede inne — `youtubeId` i `web/src/lib/site.ts` peker på
+[`r_4mrJRWJB8`](https://youtu.be/r_4mrJRWJB8), og videoseksjonen viser den.
 
-1. Kopier ID-en fra URL-en (`youtube.com/watch?v=**dQw4w9WgXcQ**`).
-2. Åpne `web/src/lib/site.ts` og sett `youtubeId: "dQw4w9WgXcQ"`.
-3. Commit og push — Vercel bygger på nytt av seg selv.
+Det som **ikke** er gjort, er kapitlene. Lista i `site.ts` har de planlagte
+tidene fra `manus.md`, ikke tidene i den ferdige filmen. Med ekte tale får hver
+scene den lengden lyden faktisk har, så de siste kapitlene ligger antakelig et
+stykke unna. Derfor er de skjult bak `chaptersVerified: false`.
 
-Kapittelmerkene i `site.ts` er allerede fylt ut fra scenene i `manus.md`, men
-tidspunktene er de *planlagte*. Når filmen finnes, sjekk dem mot den ekte
-lengden og juster `at`-verdiene. Lim samme liste inn i YouTube-beskrivelsen på
-formen `0:00 The problem`, så får videoen kapittelmerker der også.
+Slik slår du dem på:
+
+1. Se gjennom filmen og noter hvor hver scene faktisk starter.
+2. Rett `at`-verdiene i `SITE.chapters` (sekunder fra start).
+3. Sett `chaptersVerified: true`.
+4. Commit og push — Vercel bygger på nytt av seg selv.
+
+Lim gjerne samme liste inn i YouTube-beskrivelsen på formen `0:00 The problem`,
+én per linje med 0:00 først, så får videoen kapittelmerker der også.
 
 ## 4. Prosjektkortet på eivindgeiran.no
 
