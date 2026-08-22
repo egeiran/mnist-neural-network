@@ -35,7 +35,7 @@ oppslaget svarer, vanligvis innen et par minutter.
 ## 3. Kapittelmerkene i filmen
 
 Filmen ligger allerede inne — `youtubeId` i `web/src/lib/site.ts` peker på
-[`r_4mrJRWJB8`](https://youtu.be/r_4mrJRWJB8), og videoseksjonen viser den.
+[`3KQHb3Rx8PM`](https://youtu.be/3KQHb3Rx8PM), og videoseksjonen viser den.
 
 Det som **ikke** er gjort, er kapitlene. Lista i `site.ts` har de planlagte
 tidene fra `manus.md`, ikke tidene i den ferdige filmen. Med ekte tale får hver

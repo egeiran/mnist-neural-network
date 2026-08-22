@@ -9,7 +9,7 @@ Then I made a film explaining how it works, animated in
 [Manim](https://www.manim.community/), where every number on screen comes from
 the same training run that produced the weights.
 
-**[Watch the film](https://youtu.be/r_4mrJRWJB8)** · **[mnist.eivindgeiran.no](https://mnist.eivindgeiran.no)** — draw a digit and
+**[Watch the film](https://youtu.be/3KQHb3Rx8PM)** · **[mnist.eivindgeiran.no](https://mnist.eivindgeiran.no)** — draw a digit and
 run the real trained weights in your browser.
 
 ---

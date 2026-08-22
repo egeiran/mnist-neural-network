@@ -11,7 +11,7 @@ export const SITE = {
   home: "https://eivindgeiran.no",
 
   /** YouTube-ID-en (delen etter ?v= eller youtu.be/). */
-  youtubeId: "r_4mrJRWJB8" as string,
+  youtubeId: "3KQHb3Rx8PM" as string,
 
   /**
    * Kapittellista under er de PLANLAGTE tidene fra manus.md, ikke målt på den
