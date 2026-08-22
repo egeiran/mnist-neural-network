@@ -12,6 +12,7 @@ Skriver til web/public/model/ (vekter, binært) og web/src/data/ (tall, JSON).
 
 from __future__ import annotations
 
+import hashlib
 import json
 from pathlib import Path
 
@@ -73,6 +74,7 @@ def write_weights(run) -> dict:
     """
     MODEL_DIR.mkdir(parents=True, exist_ok=True)
 
+    sizes = [784, 128, 10]
     parts = [
         ("W1", run["W1_final"], [784, 128]),
         ("b1", run["b1_final"], [128]),
@@ -88,9 +90,22 @@ def write_weights(run) -> dict:
         layout.append({"name": name, "shape": shape, "offset": len(blob) // 2})
         blob += flat.tobytes()
 
-    (MODEL_DIR / "mnist-784-128-10.f16").write_bytes(bytes(blob))
+    # Filnavnet inneholder en hash av innholdet. Vercel serverer /model/* med
+    # `immutable` og ett års cache, og det er bare trygt hvis navnet endrer seg
+    # når vektene gjør det. Uten hashen ville en gjenbesøkende etter en
+    # retrening fått fjorårets vekter mot ny run.json — ingen synlig feil, bare
+    # prediksjoner og statistikk som ikke hører sammen.
+    digest = hashlib.sha256(blob).hexdigest()[:8]
+    name = f"mnist-{'-'.join(str(n) for n in sizes)}-{digest}.f16"
+
+    # Rydd vekk vekter fra tidligere kjøringer, ellers hoper de seg opp i git.
+    for old in MODEL_DIR.glob("mnist-*.f16"):
+        if old.name != name:
+            old.unlink()
+
+    (MODEL_DIR / name).write_bytes(bytes(blob))
     return {
-        "file": "/model/mnist-784-128-10.f16",
+        "file": f"/model/{name}",
         "dtype": "float16",
         "bytes": len(blob),
         "layout": layout,
@@ -138,8 +153,10 @@ def main() -> None:
     # Treningskurven har 18 750 punkter. Nettsiden trenger ikke alle — vi tar
     # median i vinduer, som holder på formen uten å sende 150 KB JSON.
     batch = run["batch_losses"].astype(float)
-    window = len(batch) // 240
-    trimmed = batch[: window * 240].reshape(240, window)
+    # max(1, ...): med få nok epoker blir vinduet null, og reshape sprekker.
+    buckets = min(240, len(batch))
+    window = max(1, len(batch) // buckets)
+    trimmed = batch[: window * buckets].reshape(buckets, window)
     loss_curve = np.median(trimmed, axis=1)
 
     # W1 sier hva hver skjult nøytron ser etter. Vi tar de som har rukket å
@@ -154,6 +171,10 @@ def main() -> None:
         lim = float(np.abs(w).max())
         filters.append({"neuron": int(j), "limit": lim, "w": [round(float(v), 4) for v in w]})
 
+    # Sorter de verste bommene etter hvor sikker modellen var. Bildene MÅ
+    # sorteres med samme rekkefølge — siden parer worst[i] med worstImages[i],
+    # og en usortert bildeliste ville byttet om bilde og bildetekst uten at noe
+    # feilet synlig.
     worst = []
     order = np.argsort(run["worst_conf"])[::-1]
     for i in order:
@@ -201,7 +222,7 @@ def main() -> None:
         "gradcheck": str(run["gradcheck_text"]),
         "float16MaxProbDiff": float(f"{max_prob_diff:.3e}"),
         "worst": worst,
-        "worstImages": digits_to_base64(run["worst_images"]),
+        "worstImages": digits_to_base64(run["worst_images"][order]),
         "sampleImages": digits_to_base64(run["batch_images"]),
         "sampleLabels": run["batch_labels"].astype(int).tolist(),
         "filters": filters,

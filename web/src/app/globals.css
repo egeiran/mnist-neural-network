@@ -835,6 +835,12 @@ pre .fn {
   max-width: 560px;
 }
 
+/* Radene finnes for skjermlesernes skyld (role="row"). display: contents lar
+   cellene fortsette å være barn av griden, så layouten er upåvirket. */
+.matrixRow {
+  display: contents;
+}
+
 .matrixHead {
   color: #5c6675;
   text-align: center;
@@ -930,6 +936,18 @@ footer {
 .footRow a:hover {
   color: var(--lime);
   border-color: var(--lime);
+}
+
+/* Siden har mange knapper — språkvelger, 32 eksempler, kapitler, tøm, spill av
+   — og nettleserens standardring er så vidt synlig mot denne bakgrunnen. */
+:focus-visible {
+  outline: 2px solid var(--lime);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+.pad:focus-visible {
+  outline-offset: -2px;
 }
 
 @media (prefers-reduced-motion: reduce) {

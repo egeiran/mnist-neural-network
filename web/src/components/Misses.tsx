@@ -69,16 +69,18 @@ export function Confusion({
   return (
     <>
       <div className="matrix" role="table" aria-label={copy.misses.confusionTitle}>
-      <span className="matrixHead" />
-      {Array.from({ length: 10 }, (_, j) => (
-        <span className="matrixHead" key={`h${j}`}>
-          {j}
-        </span>
-      ))}
+        <div className="matrixRow" role="row">
+          <span className="matrixHead" role="columnheader" />
+          {Array.from({ length: 10 }, (_, j) => (
+            <span className="matrixHead" role="columnheader" key={`h${j}`}>
+              {j}
+            </span>
+          ))}
+        </div>
 
-      {matrix.map((row, i) => (
-        <Row key={i} i={i} row={row} maxOff={maxOff} />
-      ))}
+        {matrix.map((row, i) => (
+          <Row key={i} i={i} row={row} maxOff={maxOff} copy={copy} />
+        ))}
       </div>
 
       <p className="caption">
@@ -101,10 +103,22 @@ export function Confusion({
   );
 }
 
-function Row({ i, row, maxOff }: { i: number; row: number[]; maxOff: number }) {
+function Row({
+  i,
+  row,
+  maxOff,
+  copy,
+}: {
+  i: number;
+  row: number[];
+  maxOff: number;
+  copy: Copy;
+}) {
   return (
-    <>
-      <span className="matrixHead">{i}</span>
+    <div className="matrixRow" role="row">
+      <span className="matrixHead" role="rowheader">
+        {i}
+      </span>
       {row.map((v, j) => {
         const isDiag = i === j;
         const t = Math.min(v / maxOff, 1);
@@ -122,13 +136,19 @@ function Row({ i, row, maxOff }: { i: number; row: number[]; maxOff: number }) {
                     color: t > 0.45 ? "#0c0e11" : "#8b93a0",
                   }
             }
+            role="cell"
+            aria-label={
+              isDiag
+                ? copy.misses.confusionEmpty
+                : `${copy.misses.confusionRow} ${i}, ${copy.misses.confusionCol} ${j}: ${v}`
+            }
             title={isDiag ? undefined : `${i} → ${j}: ${v}`}
           >
             {isDiag ? "" : v || ""}
           </span>
         );
       })}
-    </>
+    </div>
   );
 }
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { COPY, type Lang } from "@/lib/copy";
+import { buildCopy, type Lang } from "@/lib/copy";
 import { SITE } from "@/lib/site";
 import run from "@/data/run.json";
 import DrawDemo from "./DrawDemo";
@@ -11,6 +11,16 @@ import { Confusion, Filters, Misses } from "./Misses";
 import type { Manifest } from "@/lib/model";
 
 const manifest = run.model as Manifest;
+
+// Teksten bygges én gang fra treningskjøringen. run.json er en statisk import,
+// så dette skjer ved bygging — ikke på hver rendering.
+const COPY = buildCopy(run);
+
+// Vektene per lag, utledet av arkitekturen i stedet for skrevet inn.
+const [INPUTS, HIDDEN, OUTPUTS] = run.architecture;
+const LAYER_WEIGHTS = [INPUTS * HIDDEN, HIDDEN * OUTPUTS].map((n) =>
+  new Intl.NumberFormat("nb-NO").format(n),
+);
 
 export default function Site() {
   const [lang, setLang] = useState<Lang>("no");
@@ -97,21 +107,25 @@ export default function Site() {
 
             <div className="arch">
               <div className="layer">
-                <div className="layerN">784</div>
+                <div className="layerN">{INPUTS}</div>
                 <div className="layerLabel">{copy.how.arch.pixels}</div>
               </div>
               <div className="arrow">
-                →<small>100 352 {copy.how.arch.weights}</small>
+                →<small>
+                  {LAYER_WEIGHTS[0]} {copy.how.arch.weights}
+                </small>
               </div>
               <div className="layer">
-                <div className="layerN">128</div>
+                <div className="layerN">{HIDDEN}</div>
                 <div className="layerLabel">{copy.how.arch.hidden}</div>
               </div>
               <div className="arrow">
-                →<small>1 280 {copy.how.arch.weights}</small>
+                →<small>
+                  {LAYER_WEIGHTS[1]} {copy.how.arch.weights}
+                </small>
               </div>
               <div className="layer">
-                <div className="layerN">10</div>
+                <div className="layerN">{OUTPUTS}</div>
                 <div className="layerLabel">{copy.how.arch.digits}</div>
               </div>
             </div>
@@ -165,8 +179,10 @@ export default function Site() {
             <p className="lede">{copy.training.lede}</p>
             <Charts
               copy={copy}
+              lang={lang}
               lossCurve={run.lossCurve}
               epochAccuracy={run.epochAccuracy}
+              totalSteps={run.stepsPerEpoch * run.epochs}
             />
           </div>
         </section>

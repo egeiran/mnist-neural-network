@@ -27,7 +27,7 @@ export default function DrawDemo({ copy, manifest, samples, sampleLabels }: Prop
   const padRef = useRef<HTMLCanvasElement>(null);
   const seenRef = useRef<HTMLCanvasElement>(null);
   const drawing = useRef(false);
-  const dirty = useRef(false);
+  const frame = useRef(0);
 
   const [model, setModel] = useState<Model | null>(null);
   const [failed, setFailed] = useState(false);
@@ -81,25 +81,26 @@ export default function DrawDemo({ copy, manifest, samples, sampleLabels }: Prop
     if (seenRef.current) drawDigit(seenRef.current, x);
   }, [model]);
 
-  // Tegningen kan komme raskere enn vi vil regne. Vi flagger at noe er endret
-  // og lar animasjonsløkka plukke det opp, så vi kjører maks én gang per bilde.
-  useEffect(() => {
-    let frame = 0;
-    const tick = () => {
-      if (dirty.current) {
-        dirty.current = false;
-        run();
-      }
-      frame = requestAnimationFrame(tick);
-    };
-    frame = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(frame);
+  // Tegningen kan komme raskere enn vi vil regne, så vi samler opp til neste
+  // bilde i stedet for å kjøre nettverket per musebevegelse. Bilderammen bes om
+  // KUN når noe faktisk er endret — en løkke som ruller videre mens flaten står
+  // stille koster batteri på mobil uten å gjøre noe.
+  const schedule = useCallback(() => {
+    if (frame.current !== 0) return;
+    frame.current = requestAnimationFrame(() => {
+      frame.current = 0;
+      run();
+    });
   }, [run]);
+
+  useEffect(() => () => {
+    if (frame.current !== 0) cancelAnimationFrame(frame.current);
+  }, []);
 
   // Når vektene er ferdig lastet, regn ut det som eventuelt alt er tegnet.
   useEffect(() => {
-    if (model) dirty.current = true;
-  }, [model]);
+    if (model) schedule();
+  }, [model, schedule]);
 
   function positionOf(event: React.PointerEvent<HTMLCanvasElement>) {
     const canvas = padRef.current!;
@@ -129,7 +130,7 @@ export default function DrawDemo({ copy, manifest, samples, sampleLabels }: Prop
     ctx.fill();
     ctx.beginPath();
     ctx.moveTo(x, y);
-    dirty.current = true;
+    schedule();
   }
 
   function move(event: React.PointerEvent<HTMLCanvasElement>) {
@@ -141,12 +142,12 @@ export default function DrawDemo({ copy, manifest, samples, sampleLabels }: Prop
     ctx.stroke();
     ctx.beginPath();
     ctx.moveTo(x, y);
-    dirty.current = true;
+    schedule();
   }
 
   function end() {
     drawing.current = false;
-    dirty.current = true;
+    schedule();
   }
 
   function clear() {
@@ -182,7 +183,7 @@ export default function DrawDemo({ copy, manifest, samples, sampleLabels }: Prop
     ctx.fillRect(0, 0, PAD, PAD);
     ctx.imageSmoothingEnabled = true;
     ctx.drawImage(scratch, 0, 0, PAD, PAD);
-    dirty.current = true;
+    schedule();
   }
 
   const status = failed

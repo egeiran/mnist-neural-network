@@ -84,8 +84,15 @@ video-hq:
 video-vo:
 	VOICEOVER=1 ./build.sh
 
+web:
+	$(PY) tools/export_web.py
+
+check-web: web
+	$(PY) tools/check_web_model.py > /tmp/mnist-expected.json
+	node --experimental-strip-types tools/check_web_model.ts /tmp/mnist-expected.json
+
 clean:
 	rm -rf media/videos media/images
 	find . -name __pycache__ -type d -exec rm -rf {} +
 
-.PHONY: train train-live test artifacts scene hq preview still watch play video video-preview video-hq video-vo clean
+.PHONY: web check-web train train-live test artifacts scene hq preview still watch play video video-preview video-hq video-vo clean

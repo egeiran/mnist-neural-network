@@ -1,13 +1,19 @@
 "use client";
 
-import type { Copy } from "@/lib/copy";
+import type { Copy, Lang } from "@/lib/copy";
 
 /**
  * To diagrammer, tegnet som ren SVG. Ingen diagrambibliotek — det ville vært
  * mer kode enn dette, og siden skal laste raskt.
  */
 
-type Props = { copy: Copy; lossCurve: number[]; epochAccuracy: number[] };
+type Props = {
+  copy: Copy;
+  lang: Lang;
+  lossCurve: number[];
+  epochAccuracy: number[];
+  totalSteps: number;
+};
 
 const W = 520;
 const H = 240;
@@ -16,7 +22,17 @@ const PAD_B = 30;
 const PAD_T = 12;
 const PAD_R = 8;
 
-export function LossChart({ copy, lossCurve }: { copy: Copy; lossCurve: number[] }) {
+export function LossChart({
+  copy,
+  lang,
+  lossCurve,
+  totalSteps,
+}: {
+  copy: Copy;
+  lang: Lang;
+  lossCurve: number[];
+  totalSteps: number;
+}) {
   const max = Math.max(...lossCurve);
   const x = (i: number) => PAD_L + (i / (lossCurve.length - 1)) * (W - PAD_L - PAD_R);
   const y = (v: number) => PAD_T + (1 - v / max) * (H - PAD_T - PAD_B);
@@ -47,7 +63,7 @@ export function LossChart({ copy, lossCurve }: { copy: Copy; lossCurve: number[]
           0
         </text>
         <text x={W - PAD_R} y={H - 8} fontSize="10" fill="#5c6675" textAnchor="end">
-          18 750
+          {new Intl.NumberFormat(lang === "no" ? "nb-NO" : "en-US").format(totalSteps)}
         </text>
         <text
           x={12}
@@ -84,7 +100,10 @@ export function AccuracyChart({
     .map((v, i) => `${i ? "L" : "M"}${x(i).toFixed(1)},${y(v).toFixed(1)}`)
     .join("");
 
-  const ticks = [0.93, 0.95, 0.97, 1.0].filter((t) => t >= lo);
+  // Faste trinn ville gitt en akse uten etiketter hvis treffsikkerheten lå
+  // under det laveste av dem. Vi legger dem i stedet jevnt over det området
+  // kurven faktisk bruker.
+  const ticks = [0, 1, 2, 3].map((i) => lo + ((hi - lo) * i) / 3);
 
   return (
     <figure className="card" style={{ margin: 0 }}>
@@ -93,7 +112,7 @@ export function AccuracyChart({
           <g key={t}>
             <line x1={PAD_L} x2={W - PAD_R} y1={y(t)} y2={y(t)} stroke="#232830" />
             <text x={PAD_L - 8} y={y(t) + 3.5} textAnchor="end" fontSize="10" fill="#5c6675">
-              {(t * 100).toFixed(0)}%
+              {(t * 100).toFixed(1)}%
             </text>
           </g>
         ))}
@@ -131,10 +150,16 @@ export function AccuracyChart({
   );
 }
 
-export default function Charts({ copy, lossCurve, epochAccuracy }: Props) {
+export default function Charts({
+  copy,
+  lang,
+  lossCurve,
+  epochAccuracy,
+  totalSteps,
+}: Props) {
   return (
     <div className="chartRow">
-      <LossChart copy={copy} lossCurve={lossCurve} />
+      <LossChart copy={copy} lang={lang} lossCurve={lossCurve} totalSteps={totalSteps} />
       <AccuracyChart copy={copy} epochAccuracy={epochAccuracy} />
     </div>
   );

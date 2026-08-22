@@ -14,18 +14,21 @@ visitor's browser.
 The site reads generated data, so export that first:
 
 ```bash
-python tools/export_web.py     # from the repo root: run.npz → weights + figures
+make web          # from the repo root: run.npz → weights + figures
+make check-web    # verify the browser computes what NumPy does
 cd web && npm install && npm run dev
 ```
 
 `tools/export_web.py` writes two things, both committed:
 
-- `public/model/mnist-784-128-10.f16` — W1, b1, W2, b2 back to back as
-  little-endian float16
+- `public/model/mnist-<sizes>-<hash>.f16` — W1, b1, W2, b2 back to back as
+  little-endian float16, named by a hash of its own contents
 - `src/data/run.json` — every figure the page displays
 
-Nothing on the page is a hard-coded number. Retrain, re-run the export, and the
-site describes the new run.
+No figure on the page is hard-coded. `src/lib/copy.ts` is a function of the run
+data rather than a constant, so the sentences, the hero stats, the chart axes
+and the architecture diagram all read from `run.json`. Retrain, re-run the
+export, and the page describes the new run — including the prose.
 
 ## Layout
 
@@ -51,11 +54,16 @@ are really bad input. `src/lib/preprocess.ts` reproduces the original
 normalisation.
 
 **float16 has to be shown to be free.** Halving the download is only worth it if
-it changes no predictions. Two checks cover this: `tools/export_web.py` refuses
-to write the file if float16 flips a single prediction, and
+it changes no predictions. `make check-web` covers this: `tools/export_web.py`
+refuses to write the file if float16 flips a single prediction, and
 `tools/check_web_model.{py,ts}` runs 57 real MNIST images through both NumPy and
 the browser implementation and compares them. Largest deviation in output
 activation: `6.7e-4`, with zero changed predictions.
+
+The same check verifies that each image in the "what it gets wrong" section
+still belongs to its caption. The page pairs `worst[i]` with `worstImages[i]`,
+and if the two lists ever fall out of order nothing throws — the picture just
+stops matching the words underneath it.
 
 ## Chapter marks
 
@@ -71,5 +79,8 @@ hidden until the times are measured.
 
 Vercel, with **Root Directory** set to `web`. There are no environment
 variables — the page is fully static and holds no secrets. The one non-default
-piece of configuration is in `vercel.json`: the weights file is immutable and
-content-addressed by name, so it is served with a one-year cache.
+piece of configuration is in `vercel.json`: `/model/*` is served with a one-year
+`immutable` cache. That is only safe because the export puts a hash of the
+weights in the filename — `mnist-784-128-10-<sha8>.f16` — so retraining
+produces a new name and no returning visitor can be served last year's weights
+against this year's figures.

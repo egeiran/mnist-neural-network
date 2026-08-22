@@ -28,9 +28,10 @@ run the real trained weights in your browser.
 | Gradient check | agrees to `1.0e-11` |
 | Test errors | 253 of 10,000 |
 
-Every figure above is read out of `artifacts/run.npz`, which is written by one
-real training run. Nothing is typed in by hand — the website reads the same
-file.
+Every figure above comes from a single training run stored in
+`artifacts/run.npz`. This table is transcribed from it by hand; the website
+generates its numbers from the same file at build time, so if the two ever
+disagree, the website is right.
 
 ## Why no library
 
@@ -101,7 +102,8 @@ that the trained network runs client-side: the 101,770 parameters ship as a
 JavaScript. No inference server, nothing leaves the browser.
 
 ```bash
-python tools/export_web.py     # run.npz → weights + figures for the site
+make web          # run.npz → weights + figures for the site
+make check-web    # verify the browser computes what NumPy does
 cd web && npm install && npm run dev
 ```
 
@@ -113,16 +115,11 @@ by *centre of mass* in a 28×28 field. Scale a canvas drawing straight down to
 that. `web/src/lib/preprocess.ts` reproduces the original normalisation.
 
 **Precision.** Shipping float16 weights halves the download, so it has to be
-shown to cost nothing:
-
-```bash
-python tools/check_web_model.py > /tmp/expected.json
-node --experimental-strip-types tools/check_web_model.ts /tmp/expected.json
-```
-
-This runs the same 57 real MNIST images through NumPy and through the browser
-implementation and compares them. Largest deviation in output activation:
-`6.7e-4`, with zero changed predictions.
+shown to cost nothing. `make check-web` runs the same 57 real MNIST images
+through NumPy and through the browser implementation and compares them. Largest
+deviation in output activation: `6.7e-4`, with zero changed predictions. The
+export refuses to write the weights at all if float16 flips a single
+prediction.
 
 ## Layout
 
